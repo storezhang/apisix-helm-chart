@@ -1,0 +1,24 @@
+# 苹果系统
+.DS_Store
+
+# 版本控制
+.git/
+.gitignore
+.bzr/
+.bzrignore
+.hg/
+.hgignore
+.svn/
+
+# 备份文件
+*.swp
+*.bak
+*.tmp
+*.orig
+*~
+
+# 开发环境
+.project
+.idea/
+*.tmproj
+.vscode/
