@@ -13,17 +13,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-{{- if .Values.serviceAccount.create }}
+{{- if .Values.apisix.prometheus.enabled}}
 apiVersion: v1
-kind: ServiceAccount
+kind: Service
 metadata:
-  name: {{ include "apisix.serviceAccountName" . }}
+  name: {{ include "apisix.fullname" . }}-prometheus-metrics
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "apisix.labels" . | nindent 4 }}
-  {{- with .Values.serviceAccount.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    app.kubernetes.io/service: apisix-prometheus-metrics
+spec:
+  type: ClusterIP
+  ports:
+  - name: prometheus
+    port: {{ .Values.apisix.prometheus.containerPort }}
+    targetPort: {{ .Values.apisix.prometheus.containerPort }}
+    protocol: TCP
+  selector:
+    {{- include "apisix.selectorLabels" . | nindent 4 }}
 {{- end }}

@@ -14,16 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{- if .Values.serviceAccount.create }}
+{{- if eq .Values.apisix.deployment.mode "standalone" }}
+kind: ConfigMap
 apiVersion: v1
-kind: ServiceAccount
 metadata:
-  name: {{ include "apisix.serviceAccountName" . }}
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "apisix.labels" . | nindent 4 }}
-  {{- with .Values.serviceAccount.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+  name: apisix.yaml
+data:
+  apisix.yaml: |
+    routes:
+    -
+      uri: /hi
+      upstream:
+        nodes:
+          "127.0.0.1:1980": 1
+        type: roundrobin
+    #END
 {{- end }}

@@ -14,12 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{- if (.Values.ingress.enabled) -}}
+{{- if (and .Values.apisix.admin.enabled .Values.apisix.admin.ingress.enabled) -}}
 {{- $fullName := include "apisix.fullname" . -}}
-{{- $svcPort := .Values.ingress.servicePort | default .Values.service.http.servicePort -}}
-{{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
-  {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
-  {{- $_ := set .Values.ingress.annotations "kubernetes.io/ingress.class" .Values.ingress.className}}
+{{- $svcPort := .Values.apisix.admin.servicePort -}}
+{{- if and .Values.apisix.admin.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
+  {{- if not (hasKey .Values.apisix.admin.ingress.annotations "kubernetes.io/ingress.class") }}
+  {{- $_ := set .Values.apisix.admin.ingress.annotations "kubernetes.io/ingress.class" .Values.apisix.admin.ingress.className}}
   {{- end }}
 {{- end }}
 {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.Version }}
@@ -31,20 +31,20 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ $fullName }}
+  name: {{ $fullName }}-admin
   labels:
     {{- include "apisix.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+  {{- with .Values.apisix.admin.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if and .Values.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
-  ingressClassName: {{ .Values.ingress.className }}
+  {{- if and .Values.apisix.admin.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ .Values.apisix.admin.ingress.className }}
   {{- end }}
-  {{- if .Values.ingress.tls }}
+  {{- if .Values.apisix.admin.ingress.tls }}
   tls:
-    {{- range .Values.ingress.tls }}
+    {{- range .Values.apisix.admin.ingress.tls }}
     - hosts:
         {{- range .hosts }}
         - {{ . | quote }}
@@ -53,7 +53,7 @@ spec:
     {{- end }}
   {{- end }}
   rules:
-    {{- range .Values.ingress.hosts }}
+    {{- range .Values.apisix.admin.ingress.hosts }}
     - host: {{ .host | quote }}
       http:
         paths:
@@ -63,12 +63,12 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: {{ $fullName }}-gateway
+                name: {{ $fullName }}-admin
                 port:
                   number:  {{ $svcPort }}
             {{- else }}
             backend:
-              serviceName: {{ $fullName }}-gateway
+              serviceName: {{ $fullName }}-admin
               servicePort: {{ $svcPort }}
             {{- end }}
           {{- end }}

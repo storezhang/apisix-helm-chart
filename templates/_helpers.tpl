@@ -1,3 +1,4 @@
+{{/* vim: set filetype=mustache: */}}
 {{/*
 Expand the name of the chart.
 */}}
@@ -46,8 +47,12 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 Selector labels
 */}}
 {{- define "apisix.selectorLabels" -}}
+{{- if .Values.service.labelsOverride }}
+{{- tpl (.Values.service.labelsOverride | toYaml) . }}
+{{- else }}
 app.kubernetes.io/name: {{ include "apisix.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -58,5 +63,97 @@ Create the name of the service account to use
 {{- default (include "apisix.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Renders a value that contains template.
+Usage:
+{{ include "apisix.tplvalues.render" ( dict "value" .Values.path.to.the.Value "context" $) }}
+*/}}
+{{- define "apisix.tplvalues.render" -}}
+    {{- if typeIs "string" .value }}
+        {{- tpl .value .context }}
+    {{- else }}
+        {{- tpl (.value | toYaml) .context }}
+    {{- end }}
+{{- end -}}
+
+{{- define "apisix.basePluginAttrs" -}}
+{{- if .Values.apisix.prometheus.enabled }}
+prometheus:
+  export_addr:
+    ip: 0.0.0.0
+    port: {{ .Values.apisix.prometheus.containerPort }}
+  export_uri: {{ .Values.apisix.prometheus.path }}
+  metric_prefix: {{ .Values.apisix.prometheus.metricPrefix }}
+{{- end }}
+{{- if .Values.apisix.customPlugins.enabled }}
+{{- range $plugin := .Values.apisix.customPlugins.plugins }}
+{{- if $plugin.attrs }}
+{{ $plugin.name }}: {{- $plugin.attrs | toYaml | nindent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end -}}
+
+{{- define "apisix.pluginAttrs" -}}
+{{- merge .Values.apisix.pluginAttrs (include "apisix.basePluginAttrs" . | fromYaml) | toYaml -}}
+{{- end -}}
+
+{{/*
+Scheme to use while connecting etcd
+*/}}
+{{- define "apisix.etcd.auth.scheme" -}}
+{{- if .Values.etcd.auth.tls.enabled }}
+{{- "https" }}
+{{- else }}
+{{- "http" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Return the name of etcd password secret
+*/}}
+{{- define "apisix.etcd.secretName" -}}
+{{- if and .Values.etcd.enabled .Values.etcd.auth.rbac.create }}
+{{- template "common.names.fullname" .Subcharts.etcd }}
+{{- else if .Values.externalEtcd.existingSecret }}
+{{- print .Values.externalEtcd.existingSecret }}
+{{- else if .Values.externalEtcd.user }}
+{{- printf "etcd-%s" (include "apisix.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Return the password key name of etcd secret
+*/}}
+{{- define "apisix.etcd.secretPasswordKey" -}}
+{{- if .Values.etcd.enabled }}
+{{- print "etcd-root-password" }}
+{{- else }}
+{{- print .Values.externalEtcd.secretPasswordKey }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Key to use to fetch admin token from secret
+*/}}
+{{- define "apisix.admin.credentials.secretAdminKey" -}}
+{{- if .Values.apisix.admin.credentials.secretAdminKey }}
+{{- .Values.apisix.admin.credentials.secretAdminKey }}
+{{- else }}
+{{- "admin" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Key to use to fetch viewer token from secret
+*/}}
+{{- define "apisix.admin.credentials.secretViewerKey" -}}
+{{- if .Values.apisix.admin.credentials.secretViewerKey }}
+{{- .Values.apisix.admin.credentials.secretViewerKey }}
+{{- else }}
+{{- "viewer" }}
 {{- end }}
 {{- end }}

@@ -1,7 +1,5 @@
-# 苹果系统
 .DS_Store
-
-# 版本控制
+# Common VCS dirs
 .git/
 .gitignore
 .bzr/
@@ -9,15 +7,13 @@
 .hg/
 .hgignore
 .svn/
-
-# 备份文件
+# Common backup files
 *.swp
 *.bak
 *.tmp
 *.orig
 *~
-
-# 开发环境
+# Various IDEs
 .project
 .idea/
 *.tmproj
